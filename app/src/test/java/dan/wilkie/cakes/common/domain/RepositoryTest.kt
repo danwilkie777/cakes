@@ -1,10 +1,8 @@
 package dan.wilkie.cakes.common.domain
 
 import dan.wilkie.cakes.common.domain.Lce.Content
-import dan.wilkie.cakes.common.domain.Lce.Loading
 import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.*
-import kotlinx.coroutines.test.UnconfinedTestDispatcher
 import kotlinx.coroutines.test.runTest
 import org.junit.Assert.*
 import org.junit.Test
@@ -12,8 +10,6 @@ import org.junit.Test
 @OptIn(ExperimentalCoroutinesApi::class)
 class RepositoryTest {
     private val scheduledResults = mutableListOf<Result<String>>()
-    private val emittedItems = mutableListOf<Lce<String>>()
-    private val emittedItems2 = mutableListOf<Lce<String>>()
     private var requestCount = 0
 
     private val repo = Repository(
@@ -28,7 +24,7 @@ class RepositoryTest {
         scheduledResults.add(Result.success(data))
         scheduledResults.add(Result.success(data))
 
-        repo.data.collectIn(emittedItems)
+        val emittedItems = repo.data.collectInList()
 
         assertEquals(listOf(Content(data)), emittedItems)
     }
@@ -37,8 +33,8 @@ class RepositoryTest {
     fun `emits cached data when data is observed`() {
         scheduledResults.add(Result.success(data))
 
-        repo.data.collectIn(emittedItems)
-        repo.data.collectIn(emittedItems2)
+        val emittedItems = repo.data.collectInList()
+        val emittedItems2 = repo.data.collectInList()
 
         assertEquals(listOf(Content(data)), emittedItems)
         assertEquals(listOf(Content(data)), emittedItems2)
@@ -50,15 +46,11 @@ class RepositoryTest {
         scheduledResults.add(Result.success(data))
         scheduledResults.add(Result.success(freshData))
 
-        repo.data.collectIn(emittedItems)
+        val emittedItems = repo.data.collectInList()
         repo.refresh()
 
         assertEquals(listOf(Content(data), Content(freshData)), emittedItems)
     }
-
-    private fun Flow<Lce<String>>.collectIn(destination: MutableList<Lce<String>>) =
-        onEach { destination.add(it) }
-            .launchIn(CoroutineScope(UnconfinedTestDispatcher()))
 
     companion object {
         private const val data = "data"

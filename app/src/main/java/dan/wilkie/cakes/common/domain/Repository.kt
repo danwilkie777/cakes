@@ -4,7 +4,7 @@ import dan.wilkie.cakes.common.domain.Lce.*
 import kotlinx.coroutines.channels.BufferOverflow.DROP_OLDEST
 import kotlinx.coroutines.flow.*
 
-class Repository<T>(
+open class Repository<T>(
     private val request: suspend () -> T
 ) {
     private val _data = MutableSharedFlow<Lce<T>>(replay = 1, onBufferOverflow = DROP_OLDEST)
@@ -36,5 +36,5 @@ class Repository<T>(
 sealed class Lce<out T> {
     object Loading : Lce<Nothing>()
     data class Content<T>(val value: T) : Lce<T>()
-    data class Error<T>(val value: Throwable) : Lce<T>()
+    data class Error(val value: Throwable) : Lce<Nothing>()
 }
