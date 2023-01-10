@@ -6,7 +6,7 @@ import okhttp3.logging.HttpLoggingInterceptor.Level.BODY
 import retrofit2.Retrofit
 import retrofit2.converter.gson.GsonConverterFactory
 
-class RetrofitFactory @JvmOverloads constructor(private val baseUrl: String = BASE_URL) {
+class RetrofitFactory constructor(private val baseUrl: String = BASE_URL) {
 
     fun createRetrofit(): Retrofit {
         val client = OkHttpClient.Builder()

@@ -10,7 +10,7 @@ import kotlinx.coroutines.launch
 
 class CakeListViewModel(
     private val repo: CakeListRepository
-): ViewModel() {
+) : ViewModel() {
     private val _refreshErrors = MutableSharedFlow<Throwable>()
     val refreshErrors: SharedFlow<Throwable> = _refreshErrors
     val data: Flow<Lce<List<Cake>>> get() = repo.data
@@ -22,6 +22,12 @@ class CakeListViewModel(
             } catch (throwable: Throwable) {
                 _refreshErrors.emit(throwable)
             }
+        }
+    }
+
+    fun retry() {
+        viewModelScope.launch {
+            repo.retry()
         }
     }
 }

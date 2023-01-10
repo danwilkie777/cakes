@@ -14,18 +14,30 @@ open class Repository<T>(
         }
 
     suspend fun refresh() {
+        loadData()
+    }
+
+    suspend fun retry() {
+        loadDataEmittingAllStates()
+    }
+
+    private suspend fun loadData() {
         val result = request()
         _data.emit(Content(result))
     }
 
     private suspend fun loadInitialDataIfAbsent() {
         if (!hasContent()) {
-            _data.emit(Loading)
-            try {
-                refresh()
-            } catch (throwable: Throwable) {
-                _data.emit(Error(throwable))
-            }
+            loadDataEmittingAllStates()
+        }
+    }
+
+    private suspend fun loadDataEmittingAllStates() {
+        _data.emit(Loading)
+        try {
+            refresh()
+        } catch (throwable: Throwable) {
+            _data.emit(Error(throwable))
         }
     }
 

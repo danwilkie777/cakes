@@ -30,7 +30,7 @@ class RetrofitCakeListServiceTest {
         private val expected =
             listOf(
                 Cake("Lemon Drizzle", "A tangy option", "lemon_drizzle.jpg"),
-                Cake("Chocolate", "Old fashioned chocolate cake", "chocolate.jpg"),
+                Cake("Chocolate", "Old fashioned chocolate cake", "chocolate.jpg")
             )
 
         private const val JSON = """ 
