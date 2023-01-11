@@ -1,5 +1,6 @@
 package dan.wilkie.cakes.cakelist.domain
 
+import dan.wilkie.cakes.cakelist.domain.RefreshState.*
 import dan.wilkie.cakes.common.domain.Lce.*
 import dan.wilkie.cakes.common.domain.collectInList
 import io.mockk.*
@@ -26,7 +27,7 @@ class CakeListViewModelTest {
     fun `displays cakes when load succeeds`() = runBlocking {
         every { repo.data } returns flowOf(Loading, Content(cakes))
 
-        val displayed = viewModel.data.collectInList()
+        val displayed = viewModel.screenState.collectInList()
 
         assertEquals(
             listOf(Loading, Content(cakes)),
@@ -39,7 +40,7 @@ class CakeListViewModelTest {
         every { repo.data } returns flowOf(Loading, Content(cakes), Content(freshCakes))
         coEvery { repo.refresh() } just Runs
 
-        val displayed = viewModel.data.collectInList()
+        val displayed = viewModel.screenState.collectInList()
         viewModel.refresh()
 
         assertEquals(listOf(Loading, Content(cakes), Content(freshCakes)), displayed)
@@ -49,7 +50,7 @@ class CakeListViewModelTest {
     fun `displays initial error when initial load fails`() = runBlocking {
         every { repo.data } returns flowOf(Loading, Error(initialError))
 
-        val displayed = viewModel.data.collectInList()
+        val displayed = viewModel.screenState.collectInList()
 
         assertEquals(
             listOf(Loading, Error(initialError)),
@@ -62,12 +63,12 @@ class CakeListViewModelTest {
         every { repo.data } returns flowOf(Loading, Content(cakes))
         coEvery { repo.refresh() } throws refreshError
 
-        val displayed = viewModel.data.collectInList()
-        val refreshErrors = viewModel.refreshErrors.collectInList()
+        val displayed = viewModel.screenState.collectInList()
+        val refreshStates = viewModel.refreshState.collectInList()
         viewModel.refresh()
 
         assertEquals(listOf(Loading, Content(cakes)), displayed)
-        assertEquals(listOf(refreshError), refreshErrors)
+        assertEquals(listOf(IDLE, FAILED), refreshStates)
     }
 
     companion object {
