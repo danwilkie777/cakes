@@ -6,6 +6,9 @@ import dan.wilkie.cakes.cakelist.domain.CakeListService
 class RetrofitCakeListService(private val cakeApi: CakeApi): CakeListService {
     override suspend fun cakes(): List<Cake> {
         val cakes = cakeApi.cakes()
-        return cakes.map { it.toDomain() }
+        return cakes
+            .distinctBy { it.title }
+            .sortedBy { it.title }
+            .map { it.toDomain() }
     }
 }

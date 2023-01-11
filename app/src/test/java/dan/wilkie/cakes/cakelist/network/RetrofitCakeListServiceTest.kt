@@ -21,6 +21,19 @@ class RetrofitCakeListServiceTest {
         }
     }
 
+    @Test
+    @Throws(InterruptedException::class)
+    fun `sorts cakes and removes duplicates`() {
+        runBlocking {
+            val mockServer: MockWebServer = aMockWebServer()
+                .returningJson(UNSORTED_JSON_WITH_DUPLICATES)
+                .start()
+            val service = RetrofitCakeListService(createApi(mockServer))
+            val cakes = service.cakes()
+            assertEquals(expected, cakes)
+        }
+    }
+
     private fun createApi(mockServer: MockWebServer): CakeApi {
         val retrofit = RetrofitFactory(mockServer.url("/").toString()).createRetrofit()
         return retrofit.create(CakeApi::class.java)
@@ -29,11 +42,26 @@ class RetrofitCakeListServiceTest {
     companion object {
         private val expected =
             listOf(
-                Cake("Lemon Drizzle", "A tangy option", "lemon_drizzle.jpg"),
-                Cake("Chocolate", "Old fashioned chocolate cake", "chocolate.jpg")
+                Cake("Chocolate", "Old fashioned chocolate cake", "chocolate.jpg"),
+                Cake("Lemon Drizzle", "A tangy option", "lemon_drizzle.jpg")
             )
 
         private const val JSON = """ 
+        [
+          {
+            "title":"Chocolate",
+            "desc":"Old fashioned chocolate cake",
+            "image":"chocolate.jpg"
+          },
+          {
+            "title":"Lemon Drizzle",
+            "desc":"A tangy option",
+            "image":"lemon_drizzle.jpg"
+          }
+        ]
+        """
+
+        private const val UNSORTED_JSON_WITH_DUPLICATES = """ 
         [
           {
             "title":"Lemon Drizzle",
@@ -44,6 +72,11 @@ class RetrofitCakeListServiceTest {
             "title":"Chocolate",
             "desc":"Old fashioned chocolate cake",
             "image":"chocolate.jpg"
+          },
+          {
+            "title":"Lemon Drizzle",
+            "desc":"A tangy option",
+            "image":"lemon_drizzle.jpg"
           }
         ]
         """

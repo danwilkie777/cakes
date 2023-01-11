@@ -48,12 +48,12 @@ class CakeListViewModelTest {
 
     @Test
     fun `displays initial error when initial load fails`() = runBlocking {
-        every { repo.data } returns flowOf(Loading, Error(initialError))
+        every { repo.data } returns flowOf(Loading, Error)
 
         val displayed = viewModel.screenState.collectInList()
 
         assertEquals(
-            listOf(Loading, Error(initialError)),
+            listOf(Loading, Error),
             displayed
         )
     }
@@ -74,7 +74,6 @@ class CakeListViewModelTest {
     companion object {
         private val cakes = listOf(Cake("title1"), Cake("title2"))
         private val freshCakes = listOf(Cake("title1"), Cake("title2"), Cake("title3"))
-        private val initialError = NullPointerException()
         private val refreshError = IllegalArgumentException()
     }
 }

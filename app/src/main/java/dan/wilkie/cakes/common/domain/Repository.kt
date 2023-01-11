@@ -37,7 +37,7 @@ open class Repository<T>(
         try {
             refresh()
         } catch (throwable: Throwable) {
-            _data.emit(Error(throwable))
+            _data.emit(Error)
         }
     }
 
@@ -48,5 +48,5 @@ open class Repository<T>(
 sealed class Lce<out T> {
     object Loading : Lce<Nothing>()
     data class Content<T>(val value: T) : Lce<T>()
-    data class Error(val value: Throwable) : Lce<Nothing>()
+    object Error : Lce<Nothing>()
 }
