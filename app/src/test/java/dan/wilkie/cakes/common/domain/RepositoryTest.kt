@@ -1,6 +1,6 @@
 package dan.wilkie.cakes.common.domain
 
-import dan.wilkie.cakes.common.domain.Lce.Content
+import dan.wilkie.cakes.common.domain.Lce.*
 import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.test.runTest
@@ -21,7 +21,6 @@ class RepositoryTest {
 
     @Test
     fun `emits data when request succeeds`() {
-        scheduledResults.add(Result.success(data))
         scheduledResults.add(Result.success(data))
 
         val emittedItems = repo.data.collectInList()
@@ -50,6 +49,27 @@ class RepositoryTest {
         repo.refresh()
 
         assertEquals(listOf(Content(data), Content(freshData)), emittedItems)
+    }
+
+    @Test
+    fun `emits error when request fails`() {
+        scheduledResults.add(Result.failure(Throwable()))
+
+        val emittedItems = repo.data.collectInList()
+
+        assertEquals(listOf(Error), emittedItems)
+    }
+
+    @Test
+    fun `emits data when retry succeeds`() = runTest {
+        scheduledResults.add(Result.failure(Throwable()))
+
+        val emittedItems = repo.data.collectInList()
+
+        scheduledResults.add(Result.success(data))
+        repo.retry()
+
+        assertEquals(listOf(Error, Loading, Content(data)), emittedItems)
     }
 
     companion object {
