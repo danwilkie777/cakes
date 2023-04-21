@@ -24,8 +24,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import coil.compose.AsyncImage
 import dan.wilkie.cakes.R
 import dan.wilkie.cakes.cakelist.domain.Cake
-import dan.wilkie.cakes.cakelist.domain.CakeListViewModel
-import dan.wilkie.cakes.cakelist.domain.RefreshState.*
+import dan.wilkie.cakes.cakelist.ui.RefreshState.*
 import dan.wilkie.cakes.common.domain.Lce
 import dan.wilkie.cakes.common.domain.Lce.*
 import dan.wilkie.cakes.common.ui.FullScreenErrorState

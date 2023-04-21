@@ -2,7 +2,7 @@ package dan.wilkie.cakes.cakelist
 
 import dan.wilkie.cakes.cakelist.domain.CakeListRepository
 import dan.wilkie.cakes.cakelist.domain.CakeListService
-import dan.wilkie.cakes.cakelist.domain.CakeListViewModel
+import dan.wilkie.cakes.cakelist.ui.CakeListViewModel
 import dan.wilkie.cakes.cakelist.network.CakeApi
 import dan.wilkie.cakes.cakelist.network.RetrofitCakeListService
 import org.koin.androidx.viewmodel.dsl.viewModel

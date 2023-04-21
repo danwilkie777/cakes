@@ -1,16 +1,16 @@
-package dan.wilkie.cakes.cakelist.domain
+package dan.wilkie.cakes.cakelist.ui
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import dan.wilkie.cakes.cakelist.domain.RefreshState.*
+import dan.wilkie.cakes.cakelist.domain.Cake
+import dan.wilkie.cakes.cakelist.domain.CakeListRepository
+import dan.wilkie.cakes.cakelist.ui.RefreshState.*
 import dan.wilkie.cakes.common.domain.Lce
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
 
-class CakeListViewModel(
-    private val repo: CakeListRepository
-) : ViewModel() {
+class CakeListViewModel(private val repo: CakeListRepository) : ViewModel() {
     private val _refreshState = MutableStateFlow(IDLE)
     val refreshState: StateFlow<RefreshState> = _refreshState
     val screenState: Flow<Lce<List<Cake>>> get() = repo.data
