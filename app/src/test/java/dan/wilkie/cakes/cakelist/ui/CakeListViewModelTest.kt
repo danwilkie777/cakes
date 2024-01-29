@@ -1,15 +1,22 @@
-package dan.wilkie.cakes.cakelist.domain
+package dan.wilkie.cakes.cakelist.ui
 
-import dan.wilkie.cakes.cakelist.domain.RefreshState.*
-import dan.wilkie.cakes.common.domain.Lce.*
+import dan.wilkie.cakes.cakelist.domain.Cake
+import dan.wilkie.cakes.cakelist.domain.CakeListRepository
+import dan.wilkie.cakes.common.domain.Lce
 import dan.wilkie.cakes.common.domain.collectInList
-import io.mockk.*
-import kotlinx.coroutines.*
-import kotlinx.coroutines.flow.*
+import io.mockk.Runs
+import io.mockk.coEvery
+import io.mockk.every
+import io.mockk.just
+import io.mockk.mockk
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.flow.flowOf
+import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.test.UnconfinedTestDispatcher
 import kotlinx.coroutines.test.runTest
 import kotlinx.coroutines.test.setMain
-import org.junit.Assert.assertEquals
+import org.junit.Assert
 import org.junit.Before
 import org.junit.Test
 
@@ -25,50 +32,53 @@ class CakeListViewModelTest {
 
     @Test
     fun `displays cakes when load succeeds`() = runBlocking {
-        every { repo.data } returns flowOf(Loading, Content(cakes))
+        every { repo.data } returns flowOf(Lce.Loading, Lce.Content(cakes))
 
         val displayed = viewModel.screenState.collectInList()
 
-        assertEquals(
-            listOf(Loading, Content(cakes)),
+        Assert.assertEquals(
+            listOf(Lce.Loading, Lce.Content(cakes)),
             displayed
         )
     }
 
     @Test
     fun `displays fresh cakes when refresh succeeds`() = runTest(UnconfinedTestDispatcher()) {
-        every { repo.data } returns flowOf(Loading, Content(cakes), Content(freshCakes))
+        every { repo.data } returns flowOf(Lce.Loading, Lce.Content(cakes), Lce.Content(freshCakes))
         coEvery { repo.refresh() } just Runs
 
         val displayed = viewModel.screenState.collectInList()
         viewModel.refresh()
 
-        assertEquals(listOf(Loading, Content(cakes), Content(freshCakes)), displayed)
+        Assert.assertEquals(
+            listOf(Lce.Loading, Lce.Content(cakes), Lce.Content(freshCakes)),
+            displayed
+        )
     }
 
     @Test
     fun `displays initial error when initial load fails`() = runBlocking {
-        every { repo.data } returns flowOf(Loading, Error)
+        every { repo.data } returns flowOf(Lce.Loading, Lce.Error)
 
         val displayed = viewModel.screenState.collectInList()
 
-        assertEquals(
-            listOf(Loading, Error),
+        Assert.assertEquals(
+            listOf(Lce.Loading, Lce.Error),
             displayed
         )
     }
 
     @Test
     fun `displays refresh error when refresh fails`() = runTest(UnconfinedTestDispatcher()) {
-        every { repo.data } returns flowOf(Loading, Content(cakes))
+        every { repo.data } returns flowOf(Lce.Loading, Lce.Content(cakes))
         coEvery { repo.refresh() } throws refreshError
 
         val displayed = viewModel.screenState.collectInList()
         val refreshStates = viewModel.refreshState.collectInList()
         viewModel.refresh()
 
-        assertEquals(listOf(Loading, Content(cakes)), displayed)
-        assertEquals(listOf(IDLE, FAILED), refreshStates)
+        Assert.assertEquals(listOf(Lce.Loading, Lce.Content(cakes)), displayed)
+        Assert.assertEquals(listOf(RefreshState.IDLE, RefreshState.FAILED), refreshStates)
     }
 
     companion object {
