@@ -7,18 +7,15 @@ import kotlinx.coroutines.flow.*
 open class Repository<T>(
     private val request: suspend () -> T
 ) {
-    private val _data = MutableSharedFlow<Lce<T>>(replay = 1, onBufferOverflow = DROP_OLDEST)
-    val data: Flow<Lce<T>> = _data
-        .onSubscription {
-            loadInitialDataIfAbsent()
-        }
+    private val _data = MutableStateFlow<Lce<T>>(Loading)
+    val data: Flow<Lce<T>> = _data.onSubscription { if (isEmpty()) loadInitialData() }
 
     suspend fun refresh() {
         loadData()
     }
 
     suspend fun retry() {
-        loadDataEmittingAllStates()
+        loadInitialData()
     }
 
     private suspend fun loadData() {
@@ -26,27 +23,20 @@ open class Repository<T>(
         _data.emit(Content(result))
     }
 
-    private suspend fun loadInitialDataIfAbsent() {
-        if (!hasContent()) {
-            loadDataEmittingAllStates()
-        }
-    }
-
-    private suspend fun loadDataEmittingAllStates() {
+    private suspend fun loadInitialData() {
         _data.emit(Loading)
         try {
-            refresh()
+            loadData()
         } catch (throwable: Throwable) {
             _data.emit(Error)
         }
     }
 
-    private fun hasContent() =
-        _data.replayCache.isNotEmpty() && _data.replayCache.first() is Content<T>
+    private fun isEmpty() = _data.replayCache.firstOrNull() !is Content<T>
 }
 
-sealed class Lce<out T> {
-    object Loading : Lce<Nothing>()
-    data class Content<T>(val value: T) : Lce<T>()
-    object Error : Lce<Nothing>()
+sealed interface Lce<out T> {
+    data object Loading : Lce<Nothing>
+    data class Content<T>(val value: T) : Lce<T>
+    data object Error : Lce<Nothing>
 }

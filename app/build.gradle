@@ -5,12 +5,12 @@ plugins {
 
 android {
     namespace 'dan.wilkie.cakes'
-    compileSdk 33
+    compileSdk 34
 
     defaultConfig {
         applicationId "dan.wilkie.cakes"
         minSdk 23
-        targetSdk 33
+        targetSdk 34
         versionCode 1
         versionName "1.0"
 
@@ -80,5 +80,10 @@ dependencies {
 
     androidTestImplementation 'androidx.test.ext:junit:1.1.5'
     androidTestImplementation 'androidx.test.espresso:espresso-core:3.5.1'
+}
+tasks.withType(org.jetbrains.kotlin.gradle.tasks.KotlinCompile).all {
+    kotlinOptions {
+        languageVersion = "1.9"
+    }
 }
 
