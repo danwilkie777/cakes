@@ -22,7 +22,7 @@ class CakeListViewModel(private val repo: CakeListRepository) : ViewModel() {
                 repo.refresh()
             } catch (throwable: Throwable) {
                 _refreshState.emit(FAILED)
-                delay(50) // TODO Snackbar doesn't appear without this - needs more investigation
+                delay(500) // TODO Snackbar doesn't appear without this - needs more investigation
             }
             _refreshState.emit(IDLE)
         }

@@ -1,7 +1,11 @@
 package dan.wilkie.cakes.cakelist.domain
 
 import dan.wilkie.cakes.common.domain.Repository
+import kotlinx.coroutines.delay
 
 class CakeListRepository(private val cakeService: CakeListService): Repository<List<Cake>>(
-  request = { cakeService.cakes() }
+  request = {
+    delay(500)
+    cakeService.cakes()
+  }
 )

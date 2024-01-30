@@ -47,19 +47,19 @@ fun CakeListScreen() {
                 )
             }
         }
-    ) {
-        CakeScreenContent(scaffoldState)
+    ) { scaffoldPadding: PaddingValues ->
+        CakeScreenContent(scaffoldPadding, scaffoldState.snackbarHostState)
     }
 
 }
 
 @Composable
-private fun CakeScreenContent(scaffoldState: ScaffoldState) {
+private fun CakeScreenContent(scaffoldPadding: PaddingValues, snackbarHostState: SnackbarHostState) {
     val displayedCake = remember { mutableStateOf<Cake?>(null) }
-    Box {
+    Box(Modifier.padding(scaffoldPadding)) {
         CakeList(
             onCakeClick = { displayedCake.value = it },
-            scaffoldState = scaffoldState
+            snackbarHostState = snackbarHostState
         )
         CakeDialog(displayedCake)
     }
@@ -85,7 +85,7 @@ private fun CakeDialog(
 private fun CakeList(
     viewModel: CakeListViewModel = koinViewModel(),
     onCakeClick: (Cake) -> Unit,
-    scaffoldState: ScaffoldState
+    snackbarHostState: SnackbarHostState
 ) {
     val data: Lce<List<Cake>> =
         viewModel.screenState.collectAsStateWithLifecycle(initialValue = Loading).value
@@ -97,7 +97,7 @@ private fun CakeList(
         is Content -> CakeListContent(
             cakes = data.value,
             onCakeClick = onCakeClick,
-            scaffoldState = scaffoldState
+            snackbarHostState = snackbarHostState
         )
     }
 }
@@ -106,14 +106,12 @@ private fun CakeList(
 private fun CakeListContent(
     cakes: List<Cake>,
     onCakeClick: (Cake) -> Unit,
-    scaffoldState: ScaffoldState,
+    snackbarHostState: SnackbarHostState,
     viewModel: CakeListViewModel = koinViewModel()
 ) {
     val refreshState = viewModel.refreshState.collectAsStateWithLifecycle(initialValue = IDLE)
     val refreshing = refreshState.value == REFRESHING
     val pullRefreshState = rememberPullRefreshState(refreshing, { viewModel.refresh() })
-
-    val coroutineScope = rememberCoroutineScope()
 
     Box(Modifier.pullRefresh(pullRefreshState)) {
         LazyColumn {
@@ -126,8 +124,8 @@ private fun CakeListContent(
         }
         if (refreshState.value == FAILED) {
             val message = stringResource(R.string.that_didnt_work)
-            coroutineScope.launch {
-                scaffoldState.snackbarHostState.showSnackbar(
+            LaunchedEffect(snackbarHostState) {
+                snackbarHostState.showSnackbar(
                     message = message,
                     duration = SnackbarDuration.Short
                 )
@@ -171,6 +169,6 @@ fun CakeListContentPreview() {
             Cake("Chocolate", "Old fashioned chocolate cake", "chocolate.jpg"),
         ),
         onCakeClick = {},
-        scaffoldState = rememberScaffoldState()
+        snackbarHostState = rememberScaffoldState().snackbarHostState
     )
 }
