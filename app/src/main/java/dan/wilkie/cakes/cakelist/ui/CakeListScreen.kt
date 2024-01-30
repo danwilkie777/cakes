@@ -24,12 +24,13 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import coil.compose.AsyncImage
 import dan.wilkie.cakes.R
 import dan.wilkie.cakes.cakelist.domain.Cake
-import dan.wilkie.cakes.cakelist.ui.RefreshState.*
+import dan.wilkie.cakes.cakelist.ui.Event.NONE
+import dan.wilkie.cakes.cakelist.ui.Event.REFRESH_FAILED
 import dan.wilkie.cakes.common.domain.Lce
 import dan.wilkie.cakes.common.domain.Lce.*
 import dan.wilkie.cakes.common.ui.FullScreenErrorState
 import dan.wilkie.cakes.common.ui.LoadingState
-import kotlinx.coroutines.launch
+import kotlinx.coroutines.flow.SharedFlow
 import org.koin.androidx.compose.koinViewModel
 
 @Composable
@@ -109,8 +110,7 @@ private fun CakeListContent(
     snackbarHostState: SnackbarHostState,
     viewModel: CakeListViewModel = koinViewModel()
 ) {
-    val refreshState = viewModel.refreshState.collectAsStateWithLifecycle(initialValue = IDLE)
-    val refreshing = refreshState.value == REFRESHING
+    val refreshing: Boolean by viewModel.isRefreshing.collectAsStateWithLifecycle()
     val pullRefreshState = rememberPullRefreshState(refreshing, { viewModel.refresh() })
 
     Box(Modifier.pullRefresh(pullRefreshState)) {
@@ -119,19 +119,26 @@ private fun CakeListContent(
                 CakeRow(cake, onCakeClick)
             }
         }
-        if (refreshing) {
-            PullRefreshIndicator(refreshing, pullRefreshState, Modifier.align(TopCenter))
-        }
-        if (refreshState.value == FAILED) {
-            val message = stringResource(R.string.that_didnt_work)
-            LaunchedEffect(snackbarHostState) {
-                snackbarHostState.showSnackbar(
-                    message = message,
-                    duration = SnackbarDuration.Short
-                )
-            }
+        PullRefreshIndicator(refreshing, pullRefreshState, Modifier.align(TopCenter)) // TODO compose  1.4 to fix it not disappearing
+
+        SnackbarIfNeeded(snackbarHostState, viewModel.events)
+
+    }
+}
+
+@Composable
+fun SnackbarIfNeeded(snackbarHostState: SnackbarHostState, events: SharedFlow<Event>) {
+    val event: Event by events.collectAsStateWithLifecycle(initialValue = NONE)
+    if (event == REFRESH_FAILED) {
+        val message = stringResource(R.string.that_didnt_work)
+        LaunchedEffect(snackbarHostState) {
+            snackbarHostState.showSnackbar(
+                message = message,
+                duration = SnackbarDuration.Short
+            )
         }
     }
+
 }
 
 @Composable

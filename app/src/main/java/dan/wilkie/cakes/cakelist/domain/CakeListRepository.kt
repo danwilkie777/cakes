@@ -5,7 +5,7 @@ import kotlinx.coroutines.delay
 
 class CakeListRepository(private val cakeService: CakeListService): Repository<List<Cake>>(
   request = {
-    delay(500)
+    delay(1000)
     cakeService.cakes()
   }
 )

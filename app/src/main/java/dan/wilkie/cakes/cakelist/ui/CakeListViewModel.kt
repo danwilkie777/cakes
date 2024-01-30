@@ -4,27 +4,28 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dan.wilkie.cakes.cakelist.domain.Cake
 import dan.wilkie.cakes.cakelist.domain.CakeListRepository
-import dan.wilkie.cakes.cakelist.ui.RefreshState.*
+import dan.wilkie.cakes.cakelist.ui.Event.REFRESH_FAILED
 import dan.wilkie.cakes.common.domain.Lce
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
 
 class CakeListViewModel(private val repo: CakeListRepository) : ViewModel() {
-    private val _refreshState = MutableStateFlow(IDLE)
-    val refreshState: StateFlow<RefreshState> = _refreshState
+    private val _isRefreshing = MutableStateFlow(false)
+    val isRefreshing: StateFlow<Boolean> = _isRefreshing
+
+    private val _events = MutableSharedFlow<Event>()
+    val events: SharedFlow<Event> = _events
+
     val screenState: Flow<Lce<List<Cake>>> get() = repo.data
 
     fun refresh() {
         viewModelScope.launch {
-            _refreshState.emit(REFRESHING)
             try {
                 repo.refresh()
             } catch (throwable: Throwable) {
-                _refreshState.emit(FAILED)
-                delay(500) // TODO Snackbar doesn't appear without this - needs more investigation
+                _events.emit(REFRESH_FAILED)
             }
-            _refreshState.emit(IDLE)
+            _isRefreshing.emit(false)
         }
     }
 
@@ -35,8 +36,7 @@ class CakeListViewModel(private val repo: CakeListRepository) : ViewModel() {
     }
 }
 
-enum class RefreshState {
-    IDLE,
-    REFRESHING,
-    FAILED
+enum class Event {
+    REFRESH_FAILED,
+    NONE // TODO temp
 }
