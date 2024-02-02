@@ -4,53 +4,49 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dan.wilkie.cakes.cakelist.domain.Cake
 import dan.wilkie.cakes.cakelist.domain.CakeListRepository
-import dan.wilkie.cakes.cakelist.ui.CakeListViewState.Content
-import dan.wilkie.cakes.cakelist.ui.CakeListViewState.Error
-import dan.wilkie.cakes.cakelist.ui.CakeListViewState.Loading
+import dan.wilkie.cakes.cakelist.ui.CakeListUiState.Content
+import dan.wilkie.cakes.cakelist.ui.CakeListUiState.Error
+import dan.wilkie.cakes.cakelist.ui.CakeListUiState.Loading
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
 
 class CakeListViewModel(private val repo: CakeListRepository) : ViewModel() {
-    private val initialLoadState = MutableStateFlow<CakeListViewState>(Loading)
-    private val isRefreshing = MutableStateFlow(false)
+    private val _uiState = MutableStateFlow<CakeListUiState>(Loading)
     private val displayRefreshError = MutableStateFlow(false)
+    private val isRefreshing = MutableStateFlow(false)
 
-    private val content: Flow<CakeListViewState> = combine(
-        repo.data,
-        isRefreshing,
-        displayRefreshError
-    ) { cakes, refreshing, refreshError ->
-        Content(cakes, refreshing, refreshError)
+    val uiState: Flow<CakeListUiState> by lazy {
+        initialLoad()
+        combine(_uiState, isRefreshing, displayRefreshError) { data, refreshing, displayRefreshError ->
+            when (data) {
+                is Content -> data.copy(refreshing = refreshing, displayRefreshError = displayRefreshError)
+                else -> data
+            }
+        }
     }
 
-    val uiState: Flow<CakeListViewState> by lazy {
-        initialLoad()
-        merge(
-            initialLoadState,
-            content
-        )
+    fun initialLoad() {
+        viewModelScope.launch {
+            _uiState.emit(Loading)
+            try {
+                val result = repo.loadData()
+                _uiState.emit(Content(result))
+            } catch (throwable: Throwable) {
+                _uiState.emit(Error)
+            }
+        }
     }
 
     fun refresh() {
         viewModelScope.launch {
             isRefreshing.emit(true)
             try {
-                repo.refresh()
+                val result = repo.loadData(refresh = true)
+                _uiState.emit(Content(result))
             } catch (throwable: Throwable) {
                 displayRefreshError.emit(true)
             }
             isRefreshing.emit(false)
-        }
-    }
-
-    fun initialLoad() {
-        viewModelScope.launch {
-            initialLoadState.emit(Loading)
-            try {
-                repo.initialLoad()
-            } catch (throwable: Throwable) {
-                initialLoadState.emit(Error)
-            }
         }
     }
 
@@ -61,12 +57,12 @@ class CakeListViewModel(private val repo: CakeListRepository) : ViewModel() {
     }
 }
 
-sealed interface CakeListViewState {
-    data object Loading : CakeListViewState
+sealed interface CakeListUiState {
+    data object Loading : CakeListUiState
     data class Content(
         val cakes: List<Cake>,
         val refreshing: Boolean = false,
         val displayRefreshError: Boolean = false
-    ) : CakeListViewState
-    data object Error : CakeListViewState
+    ) : CakeListUiState
+    data object Error : CakeListUiState
 }

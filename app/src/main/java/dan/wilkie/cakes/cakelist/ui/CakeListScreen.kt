@@ -23,9 +23,9 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import coil.compose.AsyncImage
 import dan.wilkie.cakes.R
 import dan.wilkie.cakes.cakelist.domain.Cake
-import dan.wilkie.cakes.cakelist.ui.CakeListViewState.Content
-import dan.wilkie.cakes.cakelist.ui.CakeListViewState.Error
-import dan.wilkie.cakes.cakelist.ui.CakeListViewState.Loading
+import dan.wilkie.cakes.cakelist.ui.CakeListUiState.Content
+import dan.wilkie.cakes.cakelist.ui.CakeListUiState.Error
+import dan.wilkie.cakes.cakelist.ui.CakeListUiState.Loading
 import dan.wilkie.cakes.common.ui.FullScreenErrorState
 import dan.wilkie.cakes.common.ui.LoadingState
 import org.koin.androidx.compose.koinViewModel
@@ -83,7 +83,7 @@ private fun CakeList(
     onCakeClick: (Cake) -> Unit,
     snackbarHostState: SnackbarHostState
 ) {
-    val data: CakeListViewState =
+    val data: CakeListUiState =
         viewModel.uiState.collectAsStateWithLifecycle(initialValue = Loading).value
     when (data) {
         Loading -> LoadingState()
