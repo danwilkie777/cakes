@@ -20,7 +20,7 @@ fun LoadingState() {
 }
 
 @Composable
-fun FullScreenErrorState(onClick: () -> Unit) {
+fun FullScreenErrorState(onRetryClick: () -> Unit) {
     Column(
         horizontalAlignment = CenterHorizontally,
         verticalArrangement = Arrangement.Center,
@@ -30,7 +30,7 @@ fun FullScreenErrorState(onClick: () -> Unit) {
             text = stringResource(R.string.that_didnt_work),
             modifier = Modifier.padding(dimensionResource(R.dimen.space_2x))
         )
-        Button(onClick) {
+        Button(onRetryClick) {
             Text(stringResource(R.string.retry))
         }
     }

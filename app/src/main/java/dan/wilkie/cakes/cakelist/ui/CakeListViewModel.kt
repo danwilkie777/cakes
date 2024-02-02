@@ -4,39 +4,67 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dan.wilkie.cakes.cakelist.domain.Cake
 import dan.wilkie.cakes.cakelist.domain.CakeListRepository
-import dan.wilkie.cakes.cakelist.ui.Event.REFRESH_FAILED
-import dan.wilkie.cakes.common.domain.Lce
+import dan.wilkie.cakes.cakelist.ui.CakeListViewState.Content
+import dan.wilkie.cakes.cakelist.ui.CakeListViewState.Error
+import dan.wilkie.cakes.cakelist.ui.CakeListViewState.Loading
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
 
 class CakeListViewModel(private val repo: CakeListRepository) : ViewModel() {
-    private val _isRefreshing = MutableStateFlow(false)
-    val isRefreshing: StateFlow<Boolean> = _isRefreshing
+    private val initialLoadState = MutableStateFlow<CakeListViewState>(Loading)
+    private val isRefreshing = MutableStateFlow(false)
+    private val displayRefreshError = MutableStateFlow(false)
 
-    private val _events = MutableSharedFlow<Event>()
-    val events: SharedFlow<Event> = _events
+    private val content: Flow<CakeListViewState> =
+        combine(repo.data, isRefreshing, displayRefreshError) { cakes, refreshing, refreshError ->
+                Content(cakes, refreshing, refreshError)
+            }
 
-    val screenState: Flow<Lce<List<Cake>>> get() = repo.data
+    val viewState: Flow<CakeListViewState> = merge(
+        initialLoadState,
+        content
+    )
+
+    init {
+        initialLoad()
+    }
 
     fun refresh() {
         viewModelScope.launch {
+            isRefreshing.emit(true)
             try {
                 repo.refresh()
             } catch (throwable: Throwable) {
-                _events.emit(REFRESH_FAILED)
+                displayRefreshError.emit(true)
             }
-            _isRefreshing.emit(false)
+            isRefreshing.emit(false)
         }
     }
 
-    fun retry() {
+    fun initialLoad() {
         viewModelScope.launch {
-            repo.retry()
+            initialLoadState.emit(Loading)
+            try {
+                repo.initialLoad()
+            } catch (throwable: Throwable) {
+                initialLoadState.emit(Error)
+            }
+        }
+    }
+
+    fun refreshErrorShown() {
+        viewModelScope.launch {
+            displayRefreshError.emit(false)
         }
     }
 }
 
-enum class Event {
-    REFRESH_FAILED,
-    NONE // TODO temp
+sealed interface CakeListViewState {
+    data object Loading : CakeListViewState
+    data class Content(
+        val cakes: List<Cake>,
+        val refreshing: Boolean = false,
+        val displayRefreshError: Boolean = false
+    ) : CakeListViewState
+    data object Error : CakeListViewState
 }

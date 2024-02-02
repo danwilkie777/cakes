@@ -1,4 +1,4 @@
-@file:OptIn(ExperimentalLifecycleComposeApi::class, ExperimentalMaterialApi::class)
+@file:OptIn(ExperimentalMaterialApi::class)
 
 package dan.wilkie.cakes.cakelist.ui
 
@@ -19,23 +19,19 @@ import androidx.compose.ui.layout.ContentScale.Companion.Crop
 import androidx.compose.ui.res.dimensionResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
-import androidx.lifecycle.compose.ExperimentalLifecycleComposeApi
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import coil.compose.AsyncImage
 import dan.wilkie.cakes.R
 import dan.wilkie.cakes.cakelist.domain.Cake
-import dan.wilkie.cakes.cakelist.ui.Event.NONE
-import dan.wilkie.cakes.cakelist.ui.Event.REFRESH_FAILED
-import dan.wilkie.cakes.common.domain.Lce
-import dan.wilkie.cakes.common.domain.Lce.*
+import dan.wilkie.cakes.cakelist.ui.CakeListViewState.Content
+import dan.wilkie.cakes.cakelist.ui.CakeListViewState.Error
+import dan.wilkie.cakes.cakelist.ui.CakeListViewState.Loading
 import dan.wilkie.cakes.common.ui.FullScreenErrorState
 import dan.wilkie.cakes.common.ui.LoadingState
-import kotlinx.coroutines.flow.SharedFlow
 import org.koin.androidx.compose.koinViewModel
 
 @Composable
 fun CakeListScreen() {
-
     val scaffoldState = rememberScaffoldState()
     Scaffold(
         scaffoldState = scaffoldState,
@@ -51,7 +47,6 @@ fun CakeListScreen() {
     ) { scaffoldPadding: PaddingValues ->
         CakeScreenContent(scaffoldPadding, scaffoldState.snackbarHostState)
     }
-
 }
 
 @Composable
@@ -88,15 +83,13 @@ private fun CakeList(
     onCakeClick: (Cake) -> Unit,
     snackbarHostState: SnackbarHostState
 ) {
-    val data: Lce<List<Cake>> =
-        viewModel.screenState.collectAsStateWithLifecycle(initialValue = Loading).value
+    val data: CakeListViewState =
+        viewModel.viewState.collectAsStateWithLifecycle(initialValue = Loading).value
     when (data) {
         Loading -> LoadingState()
-        is Error -> FullScreenErrorState {
-            viewModel.retry()
-        }
+        is Error -> FullScreenErrorState { viewModel.initialLoad() }
         is Content -> CakeListContent(
-            cakes = data.value,
+            content = data,
             onCakeClick = onCakeClick,
             snackbarHostState = snackbarHostState
         )
@@ -105,40 +98,37 @@ private fun CakeList(
 
 @Composable
 private fun CakeListContent(
-    cakes: List<Cake>,
+    content: Content,
     onCakeClick: (Cake) -> Unit,
     snackbarHostState: SnackbarHostState,
     viewModel: CakeListViewModel = koinViewModel()
 ) {
-    val refreshing: Boolean by viewModel.isRefreshing.collectAsStateWithLifecycle()
-    val pullRefreshState = rememberPullRefreshState(refreshing, { viewModel.refresh() })
+    val pullRefreshState = rememberPullRefreshState(content.refreshing, { viewModel.refresh() })
 
     Box(Modifier.pullRefresh(pullRefreshState)) {
         LazyColumn {
-            items(cakes) { cake ->
+            items(content.cakes) { cake ->
                 CakeRow(cake, onCakeClick)
             }
         }
-        PullRefreshIndicator(refreshing, pullRefreshState, Modifier.align(TopCenter)) // TODO compose  1.4 to fix it not disappearing
+        PullRefreshIndicator(content.refreshing, pullRefreshState, Modifier.align(TopCenter))
 
-        SnackbarIfNeeded(snackbarHostState, viewModel.events)
-
+        if (content.displayRefreshError) {
+            ErrorSnackbar(snackbarHostState) { viewModel.refreshErrorShown() }
+        }
     }
 }
 
 @Composable
-fun SnackbarIfNeeded(snackbarHostState: SnackbarHostState, events: SharedFlow<Event>) {
-    val event: Event by events.collectAsStateWithLifecycle(initialValue = NONE)
-    if (event == REFRESH_FAILED) {
-        val message = stringResource(R.string.that_didnt_work)
-        LaunchedEffect(snackbarHostState) {
-            snackbarHostState.showSnackbar(
-                message = message,
-                duration = SnackbarDuration.Short
-            )
-        }
+fun ErrorSnackbar(snackbarHostState: SnackbarHostState, afterShow: () -> Unit) {
+    val message = stringResource(R.string.that_didnt_work)
+    LaunchedEffect(snackbarHostState) {
+        snackbarHostState.showSnackbar(
+            message = message,
+            duration = SnackbarDuration.Short
+        )
+        afterShow()
     }
-
 }
 
 @Composable
@@ -171,9 +161,11 @@ private fun CakeRow(cake: Cake, onCakeClick: (Cake) -> Unit) {
 @Composable
 fun CakeListContentPreview() {
     CakeListContent(
-        cakes = listOf(
-            Cake("Lemon Drizzle", "A tangy option", "lemon_drizzle.jpg"),
-            Cake("Chocolate", "Old fashioned chocolate cake", "chocolate.jpg"),
+        content = Content(
+            listOf(
+                Cake("Lemon Drizzle", "A tangy option", "lemon_drizzle.jpg"),
+                Cake("Chocolate", "Old fashioned chocolate cake", "chocolate.jpg"),
+            )
         ),
         onCakeClick = {},
         snackbarHostState = rememberScaffoldState().snackbarHostState
