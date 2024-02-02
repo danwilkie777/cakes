@@ -15,18 +15,20 @@ class CakeListViewModel(private val repo: CakeListRepository) : ViewModel() {
     private val isRefreshing = MutableStateFlow(false)
     private val displayRefreshError = MutableStateFlow(false)
 
-    private val content: Flow<CakeListViewState> =
-        combine(repo.data, isRefreshing, displayRefreshError) { cakes, refreshing, refreshError ->
-                Content(cakes, refreshing, refreshError)
-            }
+    private val content: Flow<CakeListViewState> = combine(
+        repo.data,
+        isRefreshing,
+        displayRefreshError
+    ) { cakes, refreshing, refreshError ->
+        Content(cakes, refreshing, refreshError)
+    }
 
-    val viewState: Flow<CakeListViewState> = merge(
-        initialLoadState,
-        content
-    )
-
-    init {
+    val uiState: Flow<CakeListViewState> by lazy {
         initialLoad()
+        merge(
+            initialLoadState,
+            content
+        )
     }
 
     fun refresh() {

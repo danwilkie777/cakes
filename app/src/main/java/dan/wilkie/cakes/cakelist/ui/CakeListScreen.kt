@@ -84,7 +84,7 @@ private fun CakeList(
     snackbarHostState: SnackbarHostState
 ) {
     val data: CakeListViewState =
-        viewModel.viewState.collectAsStateWithLifecycle(initialValue = Loading).value
+        viewModel.uiState.collectAsStateWithLifecycle(initialValue = Loading).value
     when (data) {
         Loading -> LoadingState()
         is Error -> FullScreenErrorState { viewModel.initialLoad() }
